@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEL</title>
+
+    <link rel="icon" href="">
+    <link rel="stylesheet" href="css/stylesheet.css">
+    <link rel="stylesheet" href="css/reset.css">
+
+    <script src="https://cdn.webrtc.ecl.ntt.com/skyway-4.4.1.js"></script>
+
+
+</head>
+<body>
+
+<style>
+    input {
+        width: 200px;
+        height: 30px;
+        border: black solid 3px;
+    }
+
+    button {
+        width: 80px;
+        height: 40px;
+    }
+
+    span {
+        display: block;
+    }
+
+    p {
+        display: block;
+    }
+
+    #no{
+        display: flex;
+    }
+
+    .v {
+        display: block;
+    }
+
+</style>
+
+
+    <div id="video">
+        <video id="my_video" width="400px" autoplay muted playsinline></video>
+    </div>
+
+    <div id="no">
+        <span>ID:</span>
+        <p id="my_id"></p>
+    </div>
+
+    <input id="their_id"></input>
+    <button id="make_call">発信</button>
+    <div class="v">
+        <video id="their_video" width="400px" autoplay muted playsinline></video>
+    </div>
+<script>
+    let localStream;
+
+    navigator.mediaDevices.getUserMedia({video: true, audio: true})
+        .then( stream => {
+            const videoElm = document.getElementById('my_video');
+            videoElm.srcObject = stream ;
+            videoElm.play() ;
+            localStream = stream ;
+        }).catch( error => {
+            console.error('mediaDevice.getUserMedia() error:',error);
+            return;
+
+        });
+
+        // peerを作成
+        const peer = new Peer({
+            key: "",
+            debug: 3
+
+        });
+
+        // peer id取得
+        peer.on('open',() => {
+            // console.log(peer);
+            document.getElementById('my_id').textContent = peer.id;        
+
+        });
+
+        // 発信処理
+        document.getElementById('make_call').onclick = () => {
+        const theirID = document.getElementById('their_id').value;
+        const mediaConnection = peer.call(theirID, localStream);
+        setEventListener(mediaConnection);
+        };
+
+        // イベントリスナを設置する関数
+        const setEventListener = mediaConnection => {
+        mediaConnection.on('stream', stream => {
+            // video要素にカメラ映像をセットして再生
+            const videoElm = document.getElementById('their_video')
+            videoElm.srcObject = stream;
+            videoElm.play();
+        });
+        }
+
+        //着信処理
+        peer.on('call', mediaConnection => {
+        mediaConnection.answer(localStream);
+        setEventListener(mediaConnection);
+        });
+
+        // エラーイベント
+        peer.on('error', err => {
+        alert(err.message);
+    });
+
+</script>
+
+
+    
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
